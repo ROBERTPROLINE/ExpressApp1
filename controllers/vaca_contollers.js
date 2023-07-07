@@ -1,11 +1,12 @@
 const httpStatuscode = require("http-status-codes").StatusCodes;
 const User = require("../models/users");
 const Vacancy = require("../models/vacancy");
+const Application = require("../models/application");
 
 //controller for vacancies
 const createVaca = async (req, res) => {
   //create new vacancy
-  console.log(req.body);
+  //console.log(req.body);
   const {
     title,
     industry,
@@ -91,7 +92,7 @@ const updateContent = async (req, res) => {
   const { id, category } = req.params;
   const { update } = req.body;
 
-  console.log("updating category : ", category, " with data : ", update);
+  //console.log("updating category : ", category, " with data : ", update);
   await Vacancy.findOne({ _id: id }).then(async (vacancy) => {
     if (!vacancy)
       return res
@@ -166,12 +167,12 @@ const deleteVaca = async (req, res) => {
 const getVaca = async (req, res) => {
   //get single vanacy
   const { id } = req.params;
-  console.log("getting vacancy : ", id);
+  //console.log("getting vacancy : ", id);
   if (!id || (id === undefined) | "undefined")
     return res.json({ error: "vaca id required" });
   await Vacancy.findOne({ _id: id })
     .then(async (vacancy) => {
-      console.log("vacancy : ", vacancy);
+      //console.log("vacancy : ", vacancy);
       if (!vacancy || vacancy === undefined) {
         return res.json({ error: "vacancy does not exists" });
       }
@@ -252,6 +253,27 @@ const getCategory = async (req, res) => {
     });
 };
 
+const GetShortListed = async (req, res) => {
+  const { id } = req.params;
+
+  let vaca_user_data = [];
+  const vacancy = await Vacancy.findOne({ _id: id });
+  const candidates = vacancy.short_listed;
+  candidates.forEach(async (cand, index) => {
+    //console.log(cand);
+    const user = await User.findOne({ _id: cand });
+    const appl = await Application.findOne({
+      employee: cand,
+      vacancy: vacancy._id,
+    });
+    //console.log(user);
+    //console.log(appl);
+
+    vaca_user_data.push({ user, appl });
+    if (index === candidates.length - 1)
+      return res.json({ users: vaca_user_data });
+  });
+};
 module.exports = {
   createVaca,
   updateVaca,
@@ -261,4 +283,5 @@ module.exports = {
   getMyVaca,
   getVaca,
   updateContent,
+  GetShortListed,
 };

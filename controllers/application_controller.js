@@ -7,7 +7,7 @@ const apply = async (req, res) => {
   //apply for a vacancy
   let appCreated = false;
 
-  console.log(req.body);
+  //console.log(req.body);
   const { vacancy, cover_letter } = req.body;
 
   const appExists = await Application.findOne({
@@ -79,14 +79,37 @@ const apply = async (req, res) => {
 };
 
 const rejectApp = async (req, res) => {
-  const { app } = req.params;
+  const { id } = req.params;
+
+  const appExists = await Application.findOne({ _id: id });
+  const vacancy = await Vacancy.findOne({ _id: appExists.vacancy });
+
+  if (!appExists)
+    return res
+      .status(httpStatuscode.NOT_FOUND)
+      .json({ error: "application does not exists" });
+
+  if (vacancy.employer.id !== req.user.id)
+    return res.status(httpStatuscode.FORBIDDEN).json({
+      error:
+        "You cannot reject an applicaton that does not belong to your vacancy",
+    });
+
+  await Application.findOneAndUpdate({ _id: id }, { status: "rejected" })
+    .then(() => {
+      res.status(httpStatuscode.OK).json({ success: "application rejected" });
+    })
+    .catch((err) => {
+      res.status(httpStatuscode.NO_CONTENT).json({ Error: err.message });
+    });
 };
 const deleteApp = async (req, res) => {
   //delete application from vacancy
 
-  const { application } = req.body;
+  const { id } = req.params;
+  const application = await Application.findOne({ _id: id });
   await Application.findOneAndDelete({
-    _id: application,
+    _id: id,
     employee: req.user.id,
   })
     .then(async (app) => {
@@ -95,32 +118,50 @@ const deleteApp = async (req, res) => {
           .status(httpStatuscode.NOT_FOUND)
           .json({ error: "application not found" });
 
-      await User.findOneAndUpdate(
-        { _id: req.user.id },
+      const userApplications = await User.findOne({ _id: req.user.id });
+      const vacaCandidates = await Vacancy.findOne({ _id: app.vacancy });
+
+      //remove user for candidates of the current vacancy
+
+      await Vacancy.findOneAndUpdate(
+        { _id: app.vacancy },
         {
-          application: application.filter((ap) => {
-            if (ap !== application) return ap;
+          candidates: vacaCandidates.candidates.filter((cand) => {
+            if (cand !== req.user.id) return cand;
+          }),
+
+          short_listed: vacaCandidates.short_listed.filter((cnd) => {
+            if (cnd !== req.user.id) return cnd;
           }),
         }
-      ).then(async () => {
-        Vacancy.findOneAndUpdate(
-          { _id: app.job },
-          {
-            candidates: candidates.filter((ca) => {
-              if (ca !== req.user.id) {
-                return ca;
-              }
-            }),
-          }
-        ).then(() => {
+      )
+        .then(async (vaca) => {
+          //remove application from user applications list
+
+          await User.findOneAndUpdate(
+            { _id: req.user.id },
+            {
+              applications: userApplications.applications.filter((appl) => {
+                if (String(appl) !== String(app._id)) {
+                  // console.log(String(app._id) === String(appl));
+                  return appl;
+                }
+              }),
+            }
+          );
+        })
+        .then((user) => {
+          //remove application for short listed list
           res
             .status(httpStatuscode.OK)
-            .json({ success: "application deleted" });
+            .json({ success: "Application deleted" });
         });
-      });
     })
     .catch((err) => {
-      return res.json({ error: err.message });
+      console.log(err);
+      res
+        .status(httpStatuscode.NOT_IMPLEMENTED)
+        .json({ Error: "Could not delete application" });
     });
 };
 
@@ -136,8 +177,53 @@ const getApp = async (req, res) => {
       res.status(httpStatuscode.NOT_FOUND).json({ error: err.message });
     });
 };
+
+const ShortList = async (req, res) => {
+  const { id } = req.params;
+  const application = await Application.findOne({ _id: id });
+
+  const vacancy = await Vacancy.findOne({ _id: application.vacancy });
+
+  if (vacancy.short_listed.indexOf(id) !== -1)
+    return res
+      .status(httpStatuscode.NOT_MODIFIED)
+      .json({ Error: "Application already short-listed" });
+  if (!application)
+    return res
+      .status(httpStatuscode.NOT_FOUND)
+      .json({ Error: "Application does not exists" });
+
+  if (vacancy.employer.id !== req.user.id)
+    return res
+      .status(httpStatuscode.UNAUTHORIZED)
+      .json({ Error: "You cannot perform this action on someone`s vacancy" });
+
+  await Application.findOneAndUpdate({ _id: id }, { status: "short-listed" })
+    .then(async (app) => {
+      await Vacancy.findOneAndUpdate(
+        { _id: application.vacancy },
+        {
+          short_listed: [...vacancy.short_listed, application.employee],
+          candidates: vacancy.candidates.filter((cand) => {
+            if (application.employee !== cand) return cand;
+          }),
+        }
+      ).then((vaca) => {
+        res
+          .status(httpStatuscode.OK)
+          .json({ success: "application short-listeda" });
+      });
+    })
+    .catch((err) => {
+      res.status(httpStatuscode.NOT_IMPLEMENTED).json({
+        Error: `Failed to shortlist candidate. Reason :${err.message}`,
+      });
+    });
+};
 module.exports = {
   apply,
   deleteApp,
   getApp,
+  rejectApp,
+  ShortList,
 };

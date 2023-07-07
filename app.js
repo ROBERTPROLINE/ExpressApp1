@@ -18,7 +18,7 @@ app.use(require("express").static(path.join(__dirname, "static")));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(function (req, res, next) {
-  console.log(req.url, " : ", req.method);
+  //console.log(req.url, " : ", req.method);
   res.setHeader(
     "Access-Control-Allow-Headers",
     "X-Requested-With,content-type, Accept,Authorization,Origin"

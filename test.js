@@ -1,5 +1,3 @@
-const { DATE } = require("mysql/lib/protocol/constants/types");
-
 people = [
   {
     name: "robert",
@@ -23,13 +21,11 @@ people = [
   },
 ];
 
-let np = people.map((ele) => {
-  return ele["name"];
-});
+const names = ["r", "v", "b"];
+console.log(names.indexOf("A"));
 
-console.log(np);
-
-return {
+/**
+ * return {
   userid: userData._id,
   fullname: userData.fullname,
   email: userData.email,
@@ -41,3 +37,4 @@ return {
   vacancies: userData.vacancies,
   userApplication,
 };
+ */
