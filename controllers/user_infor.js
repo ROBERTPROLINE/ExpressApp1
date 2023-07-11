@@ -12,7 +12,7 @@ const getInfor = async (req, res) => {
   const candidates = vaca.candidates;
   candidates.forEach(async (cand, index) => {
     //console.log(cand);
-    const user = await User.findOne({ _id: cand });
+    const userData = await User.findOne({ _id: cand });
     const appl = await Application.findOne({
       employee: cand,
       vacancy: vacancy,
@@ -20,7 +20,17 @@ const getInfor = async (req, res) => {
     //console.log(user);
     //console.log(appl);
 
-    vaca_user_data.push({ user, appl });
+    vaca_user_data.push({
+      user: {
+        userid: userData._id,
+        fullname: userData.fullname,
+        email: userData.email,
+        experience: userData.experience,
+        profession: userData.profession,
+        skills: userData.skills,
+      },
+      appl,
+    });
     if (index === candidates.length - 1)
       return res.json({ users: vaca_user_data });
   });

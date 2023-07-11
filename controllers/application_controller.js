@@ -204,9 +204,6 @@ const ShortList = async (req, res) => {
         { _id: application.vacancy },
         {
           short_listed: [...vacancy.short_listed, application.employee],
-          candidates: vacancy.candidates.filter((cand) => {
-            if (application.employee !== cand) return cand;
-          }),
         }
       ).then((vaca) => {
         res

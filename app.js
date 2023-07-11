@@ -74,6 +74,12 @@ app.use(function (err, req, res, next) {
 app.set("port", process.env.PORT || 3000);
 
 var server = app.listen(app.get("port"), async function () {
-  await DATABASE(process.env.DATABASE_URI);
-  console.log("Express server listening on port " + server.address().port);
+  await DATABASE(process.env.DATABASE_URI)
+    .then(() => {
+      console.log("Express server listening on port " + server.address().port);
+    })
+    .catch((ex) => {
+      console.log("Error : ", ex.message);
+      process.exit();
+    });
 });

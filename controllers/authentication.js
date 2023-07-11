@@ -27,7 +27,7 @@ const login = async (req, res) => {
           .json({ error: "username/password mismatch" });
       }
 
-      const validPassword = bcrypt.compare(password, userdata.password);
+      const validPassword = await bcrypt.compare(password, userdata.password);
 
       if (!validPassword) {
         return res
@@ -140,14 +140,12 @@ const generateToken = async (req, res) => {
       return res.json({ error: err.message });
     });
 
-  res
-    .status(httpStatuscode.OK)
-    .json({
-      access: accessToken,
-      refresh: refreshToken,
-      userid: req.user._id,
-      fullname: req.user.fullname,
-    });
+  res.status(httpStatuscode.OK).json({
+    access: accessToken,
+    refresh: refreshToken,
+    userid: req.user._id,
+    fullname: req.user.fullname,
+  });
 };
 
 module.exports = {
