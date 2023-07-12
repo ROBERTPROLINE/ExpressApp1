@@ -261,6 +261,7 @@ const GetShortListed = async (req, res) => {
   const candidates = vacancy.short_listed;
   candidates.forEach(async (cand, index) => {
     //console.log(cand);
+    const userData = await User.findOne({ _id: cand });
     const user = await User.findOne({ _id: cand });
     const appl = await Application.findOne({
       employee: cand,
@@ -269,7 +270,18 @@ const GetShortListed = async (req, res) => {
     //console.log(user);
     //console.log(appl);
 
-    vaca_user_data.push({ user, appl });
+    vaca_user_data.push({
+      user: {
+        userid: userData._id,
+        fullname: userData.fullname,
+        email: userData.email,
+        experience: userData.experience,
+        profession: userData.profession,
+        username: userData.username,
+        skills: userData.skills,
+      },
+      appl,
+    });
     if (index === candidates.length - 1)
       return res.json({ users: vaca_user_data });
   });

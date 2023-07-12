@@ -27,6 +27,7 @@ const getInfor = async (req, res) => {
         email: userData.email,
         experience: userData.experience,
         profession: userData.profession,
+        username: userData.username,
         skills: userData.skills,
       },
       appl,

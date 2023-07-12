@@ -88,7 +88,20 @@ const signup = async (req, res) => {
 const account_info = async (req, res) => {
   await User.findOne({ _id: req.user.id })
     .then(async (userData) => {
-      res.status(httpStatuscode.OK).json({ account: userData });
+      res.status(httpStatuscode.OK).json({
+        account: {
+          email: userData.email,
+          username: userData.username,
+          fullname: userData.fullname,
+          skills: userData.skills,
+          profession: userData.profession,
+          experience: userData.experience,
+          address: userData.address,
+          phone: userData.phone,
+          _id: userData._id,
+          settings: userData.settings,
+        },
+      });
     })
     .catch((err) => {
       res.status(httpStatuscode.NOT_FOUND).json({ error: "account not found" });
@@ -106,6 +119,55 @@ const update_account = async (req, res) => {
   });
 };
 
+const update_prefs = async (req, res) => {
+  await User.findOneAndUpdate({ _id: req.user.id }, req.body)
+    .then((user) => {
+      if (!user)
+        return res
+          .status(httpStatuscode.NOT_FOUND)
+          .json({ Error: "User Account not found" });
+
+      res.status(httpStatuscode.OK).json({ success: "update done" });
+    })
+    .catch((err) => {
+      res.status(httpStatuscode.NOT_IMPLEMENTED).json({ Error: err.message });
+    });
+};
+
+const update_password = async (req, res) => {
+  const { old, newp } = req.body;
+  await User.findOne({ _id: req.user.id })
+    .then(async (userdata) => {
+      if (!userdata || userdata === null || userdata === undefined) {
+        return res
+          .status(httpStatuscode.UNAUTHORIZED)
+          .json({ error: "username/password mismatch" });
+      }
+
+      const validPassword = await bcrypt.compare(old, userdata.password);
+
+      if (!validPassword)
+        return res
+          .status(httpStatuscode.UNAUTHORIZED)
+          .json({ error: "old password is incorrect" });
+
+      hashedPAssword = await bcrypt.hash(newp, 10);
+      await User.findOneAndUpdate(
+        { _id: req.user.id },
+        {
+          password: hashedPAssword,
+        }
+      ).then(async (newUser) => {
+        res.status(httpStatuscode.OK).json({ success: "password changed " });
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res
+        .status(httpStatuscode.NOT_IMPLEMENTED)
+        .json({ error: err.message });
+    });
+};
 const generateToken = async (req, res) => {
   //save current valid token i db
   const accessToken = await jwt.sign(
@@ -154,4 +216,6 @@ module.exports = {
   account_info,
   updateProfile,
   update_account,
+  update_prefs,
+  update_password,
 };

@@ -10,6 +10,7 @@ const applicationRoutes = require("./routes/application_routes");
 const profilePicRoute = require("./routes/profile_upload");
 const profilePicdown = require("./routes/profile_download");
 const userInforRoutes = require("./routes/user_infor_routes");
+const help = require("./routes/help");
 const DATABASE = require("./database/connection");
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/app", applicationRoutes);
 app.use("/profile_pic", profilePicRoute);
 app.use("/profilepicdl", profilePicdown);
 app.use("/infor", userInforRoutes);
+app.use("/help", help);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
