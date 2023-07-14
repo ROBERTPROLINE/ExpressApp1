@@ -48,12 +48,10 @@ const User = mongoose.Schema({
     prefs: {
       vacancies: {
         type: Boolean,
-        default: true,
       },
-      jobs: { type: Boolean, default: true },
+      jobs: { type: Boolean },
       applications: {
         type: Boolean,
-        default: true,
       },
     },
 
